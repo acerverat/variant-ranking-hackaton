@@ -1,0 +1,27 @@
+# Datos crudos / generados pesados — nunca deben subirse (VCF, FASTQ, bases de ANNOVAR, etc.)
+*.vcf
+*.vcf.gz
+*.vcf.gz.tbi
+*.fastq.gz
+*.bam
+*.bam.bai
+*.fasta
+*.fa
+*.fa.fai
+
+# Caché y work dirs de Nextflow
+work/
+.nextflow/
+.nextflow.log*
+
+# Este repo es solo código: las salidas de correr el pipeline (candidatas, rankings,
+# reportes de Nextflow) no se versionan aquí.
+annotation/results/
+ranking/results/
+
+# Python
+__pycache__/
+*.pyc
+
+# Sistema
+.DS_Store
