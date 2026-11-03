@@ -1,66 +1,66 @@
-# Variant Ranking — Hackatón
+# Variant Ranking — Hackathon
 
-Priorización de variantes de un VCF de genoma completo para diagnóstico clínico,
-combinando anotación funcional (ANNOVAR), similitud fenotipo-gen (HPO) y un score
-compuesto auditable (evidencia clínica + impacto + frecuencia + herencia + control
-de calidad).
+Prioritization of variants from a whole-genome VCF for clinical diagnosis,
+combining functional annotation (ANNOVAR), phenotype-gene similarity (HPO),
+and an auditable composite score (clinical evidence + impact + frequency +
+inheritance + quality control).
 
-## Estructura
-
-```
-annotation/   Pipeline de Nextflow: VCF → NORMALIZE → ANNOVAR → SELECT_CANDIDATES
-ranking/      Similitud HPO-gen + score compuesto → tabla final rankeada
-```
-
-Ver el `README.md` de cada carpeta para el detalle de cada paso, los parámetros,
-y las decisiones de diseño (por qué se penaliza o no cada cosa).
-
-**Este repositorio es solo código.** Las salidas de correr el pipeline (variantes
-candidatas, tablas rankeadas, reportes de Nextflow) no se versionan aquí
-(`results/` está en `.gitignore`) — se generan localmente al correrlo.
-
-## Pipeline, de un vistazo
+## Structure
 
 ```
-VCF (WGS, GRCh38, 5M variantes)
-  │  NORMALIZE: PASS, separa multialélicos, alinea indels, QC básico
-  │  ANNOVAR: 9 bases (refGene, ensGene, avsnp151, ClinVar, gnomAD v4.1
-  │           genoma+exoma, dbNSFP47a, dbscSNV, InterVar/ACMG)
-  │  SELECT_CANDIDATES: exónico/splicing, no sinónimo, raro (≤1% gnomAD)
+annotation/   Nextflow pipeline: VCF → NORMALIZE → ANNOVAR → SELECT_CANDIDATES
+ranking/      HPO-gene similarity + composite score → final ranked table
+```
+
+See each folder's `README.md` for step-by-step detail, parameters, and
+design decisions (why each thing is or isn't penalized).
+
+**This repository is code only.** Outputs from running the pipeline
+(candidate variants, ranked tables, Nextflow reports) are not versioned here
+(`results/` is in `.gitignore`) — they're generated locally when you run it.
+
+## Pipeline, at a glance
+
+```
+VCF (WGS, GRCh38, 5M variants)
+  │  NORMALIZE: PASS, splits multiallelics, aligns indels, basic QC
+  │  ANNOVAR: 9 databases (refGene, ensGene, avsnp151, ClinVar, gnomAD v4.1
+  │           genome+exome, dbNSFP47a, dbscSNV, InterVar/ACMG)
+  │  SELECT_CANDIDATES: exonic/splicing, non-synonymous, rare (≤1% gnomAD)
   ▼
-640 variantes candidatas (ver results/candidates/ al correrlo)
-  │  hpo_gene_similarity.py: similitud Resnik+BMA contra el fenotipo HPO
-  │  composite_score.py: score 0-100 con 5 ejes + banderas de calidad
+640 candidate variants (see results/candidates/ once you run it)
+  │  hpo_gene_similarity.py: Resnik+BMA similarity against the HPO phenotype
+  │  composite_score.py: 0-100 score across 5 axes + quality flags
   ▼
-tabla final rankeada (ver results/*.top25.tsv al correrlo)
+final ranked table (see results/*.top25.tsv once you run it)
 ```
 
-## Resultado (caso WGS_EX2312012)
+## Result (case WGS_EX2312012)
 
-| # | Score | Gen | Variante | Evidencia |
+| # | Score | Gene | Variant | Evidence |
 |---|---|---|---|---|
-| 1 | 91.5 | `BUB1B` | stopgain p.L737X | ClinVar P/LP, InterVar Pathogenic, HPO exacto (rabdomiosarcoma) |
-| 2 | 78.2 | `LZTR1` | stopgain p.Y748X | ClinVar Pathogenic — hallazgo secundario |
-| 3 | 72.4 | `BUB1B` | missense p.N1002K | AlphaMissense 0.92, mismo gen que #1 |
-| 4 | 65.3 | `GNRHR` | missense p.R139H | ClinVar Pathogenic, fenotipo débil |
+| 1 | 91.5 | `BUB1B` | stopgain p.L737X | ClinVar P/LP, InterVar Pathogenic, exact HPO match (rhabdomyosarcoma) |
+| 2 | 78.2 | `LZTR1` | stopgain p.Y748X | ClinVar Pathogenic — secondary finding |
+| 3 | 72.4 | `BUB1B` | missense p.N1002K | AlphaMissense 0.92, same gene as #1 |
+| 4 | 65.3 | `GNRHR` | missense p.R139H | ClinVar Pathogenic, weak phenotype match |
 
-**Hipótesis principal:** síndrome de aneuploidía variegada en mosaico tipo 1
-(MVA1, `BUB1B`), recesivo — coherente con rabdomiosarcoma, restricción de
-crecimiento y abortos recurrentes de los padres descritos en el fenotipo. Fase
-entre las dos variantes de `BUB1B` no confirmada (sin muestra parental).
+**Leading hypothesis:** mosaic variegated aneuploidy syndrome 1 (MVA1,
+`BUB1B`), recessive — consistent with rhabdomyosarcoma, growth restriction,
+and the parents' recurrent miscarriages described in the phenotype. Phase
+between the two `BUB1B` variants is unconfirmed (no parental sample).
 
-## Limitaciones conocidas
+## Known limitations
 
-- Pesos del score fijados a mano, no aprendidos — pendiente un set de casos
-  simulados (ClinVar + 1000 Genomes) para validación independiente.
-- Solo cobertura exónica/splicing (±10 pb); sin CNVs/SVs, intrónicas profundas
-  ni mitocondrial.
-- Sin trío: ninguna variante recesiva está confirmada en fase.
+- Score weights are hand-set, not learned — a simulated-case benchmark
+  (ClinVar + 1000 Genomes) is still pending for independent validation.
+- Coverage limited to exonic/splicing (±10 bp); no CNVs/SVs, deep intronic
+  variants, or mitochondrial.
+- No trio: no recessive variant has confirmed phase.
 
-Detalle completo en `ranking/README.md`.
+Full detail in `ranking/README.md`.
 
-## Créditos
+## Credits
 
-El pipeline de anotación está adaptado de
+The annotation pipeline is adapted from
 [Pipelines_Inmegen/Annotation](https://github.com/INMEGEN/Pipelines_Inmegen/tree/Principal/Annotation)
 (INMEGEN, CC BY-NC-SA 4.0).
